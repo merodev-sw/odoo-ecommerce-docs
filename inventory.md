@@ -14,14 +14,15 @@ This guide provides an end-to-end technical reference for backend developers int
 3. [Model & Field References](#3-model--field-references)
    - [3.1 Product Template (`product.template`)](#31-product-template-producttemplate)
    - [3.2 Product Variant (`product.product`)](#32-product-variant-productproduct)
-   - [3.3 Stock Quant / Physical Stock Level (`stock.quant`)](#33-stock-quant--physical-stock-level-stockquant)
-   - [3.4 Warehouses & Locations (`stock.warehouse` & `stock.location`)](#34-warehouses--locations-stockwarehouse--stocklocation)
-   - [3.5 Stock Transfers & Receipts (`stock.picking` & `stock.move`)](#35-stock-transfers--receipts-stockpicking--stockmove)
-   - [3.6 Lots & Serial Numbers (`stock.lot`)](#36-lots--serial-numbers-stocklot)
-   - [3.7 Reordering Rules (`stock.warehouse.orderpoint`)](#37-reordering-rules-stockwarehouseorderpoint)
+   - [3.3 Product Images & Media Gallery (`product.image`)](#33-product-images--media-gallery-productimage)
+   - [3.4 Stock Quant / Physical Stock Level (`stock.quant`)](#34-stock-quant--physical-stock-level-stockquant)
+   - [3.5 Warehouses & Locations (`stock.warehouse` & `stock.location`)](#35-warehouses--locations-stockwarehouse--stocklocation)
+   - [3.6 Stock Transfers & Receipts (`stock.picking` & `stock.move`)](#36-stock-transfers--receipts-stockpicking--stockmove)
+   - [3.7 Lots & Serial Numbers (`stock.lot`)](#37-lots--serial-numbers-stocklot)
+   - [3.8 Reordering Rules (`stock.warehouse.orderpoint`)](#38-reordering-rules-stockwarehouseorderpoint)
 4. [Step-by-Step E-Commerce Integration Workflow](#4-step-by-step-e-commerce-integration-workflow)
    - [Step 1: Warehouse & Internal Location Lookup](#step-1-warehouse--internal-location-lookup)
-   - [Step 2: Catalog Sync: Creating Products & Variants](#step-2-catalog-sync-creating-products--variants)
+   - [Step 2: Catalog Sync: Products, Variants & Multiple Images Gallery](#step-2-catalog-sync-products-variants--multiple-images-gallery)
    - [Step 3: Real-Time Stock Availability Queries (Preventing Overselling)](#step-3-real-time-stock-availability-queries-preventing-overselling)
    - [Step 4: Real-Time Inventory Adjustments (Syncing Physical Stock Counts)](#step-4-real-time-inventory-adjustments-syncing-physical-stock-counts)
    - [Step 5: Processing Inbound Goods Receipts (Supplier Restock)](#step-5-processing-inbound-goods-receipts-supplier-restock)
@@ -102,6 +103,8 @@ The base product definition. A template can represent a single standalone produc
 | `standard_price`| `Float` | Optional | `0.0` | Cost price (used for margin and inventory valuation calculations). |
 | `default_code` | `Char` | Optional | `null` | Primary SKU / Internal Reference. |
 | `barcode` | `Char` | Optional | `null` | Barcode (EAN13, UPC, Code128). |
+| `image_1920` | `Binary` | Optional | `null` | Primary product image (Base64-encoded binary string up to 1920x1920). Auto-generates `image_1024`, `image_512`, `image_256`, `image_128`. |
+| `product_template_image_ids` | `One2many` (`product.image`) | Optional | `[]` | Extra media gallery images for this product template. |
 | `weight` | `Float` | Optional | `0.0` | Product weight (in kg). Used for shipping rate calculation. |
 | `volume` | `Float` | Optional | `0.0` | Product volume (in m³). |
 | `sale_ok` | `Boolean` | Optional | `true` | Set to `true` to allow selling via sales orders and e-commerce. |
@@ -121,6 +124,8 @@ The specific sellable SKU (e.g. Size M, Color Black). If a product template has 
 | `product_tmpl_id` | `Many2one` (`product.template`) | **REQUIRED** | — | Parent product template ID. |
 | `default_code` | `Char` | Optional | Template SKU | Variant-specific SKU (e.g., `KEYBOARD-PRO-RGB-RED`). |
 | `barcode` | `Char` | Optional | Template Barcode | Variant-specific barcode (e.g., `012345678905`). |
+| `image_variant_1920` / `image_1920` | `Binary` | Optional | Template Image | Variant-specific primary image (Base64 string). Falls back to template `image_1920` if unset. |
+| `product_variant_image_ids` | `One2many` (`product.image`) | Optional | `[]` | Variant-specific extra gallery images. |
 | `weight` | `Float` | Optional | Template Weight | Variant-specific weight. |
 | `lst_price` | `Float` | *Computed* | Template list_price | Calculated variant selling price. |
 | `product_template_attribute_value_ids` | `Many2many` | Optional | `[]` | Linked attribute values defining this variant (e.g., Red, Medium). |
@@ -132,7 +137,26 @@ The specific sellable SKU (e.g. Size M, Color Black). If a product template has 
 
 ---
 
-### 3.3 Stock Quant / Physical Stock Level (`stock.quant`)
+### 3.3 Product Images & Media Gallery (`product.image`)
+
+The `product.image` model manages multiple extra images and media gallery assets associated with a product template or specific variant.
+
+| Field Name | Type | Requirement | Default | Description & E-Commerce Purpose |
+| :--- | :--- | :--- | :--- | :--- |
+| `name` | `Char` | **REQUIRED** | — | Label / Title for the image (e.g., `Side Angle View`, `Ports & Connectivity`, `In-Box Contents`). |
+| `image_1920` | `Binary` | **REQUIRED** | — | Base64-encoded raw binary image data (PNG, JPG, WebP). Maximum resolution 1920x1920 px. |
+| `product_tmpl_id` | `Many2one` (`product.template`) | **REQUIRED** | — | Parent product template ID this image belongs to. |
+| `product_variant_id` | `Many2one` (`product.product`) | Optional | `null` | Optional specific variant ID (e.g. show this image only when "Midnight Blue" variant is selected). |
+| `sequence` | `Integer` | Optional | `10` | Display sorting sequence in gallery (lower number appears first). |
+| `video_url` | `Char` | Optional | `null` | Optional external video URL (YouTube, Vimeo, Dailymotion) to embed in media carousel. |
+| `image_1024` | `Binary` | *Computed* | — | Automatically resized 1024px thumbnail (ideal for product detail page display). |
+| `image_512` | `Binary` | *Computed* | — | Automatically resized 512px thumbnail (ideal for product cards). |
+| `image_256` | `Binary` | *Computed* | — | Automatically resized 256px thumbnail. |
+| `image_128` | `Binary` | *Computed* | — | Automatically resized 128px thumbnail (ideal for cart & order lines). |
+
+---
+
+### 3.4 Stock Quant / Physical Stock Level (`stock.quant`)
 
 Stores the physical quantity of a specific product variant at a specific warehouse location.
 
@@ -149,7 +173,7 @@ Stores the physical quantity of a specific product variant at a specific warehou
 
 ---
 
-### 3.4 Warehouses & Locations (`stock.warehouse` & `stock.location`)
+### 3.5 Warehouses & Locations (`stock.warehouse` & `stock.location`)
 
 #### `stock.warehouse`
 | Field Name | Type | Requirement | Description |
@@ -167,7 +191,7 @@ Stores the physical quantity of a specific product variant at a specific warehou
 
 ---
 
-### 3.5 Stock Transfers & Receipts (`stock.picking` & `stock.move`)
+### 3.6 Stock Transfers & Receipts (`stock.picking` & `stock.move`)
 
 Represents all physical movements of inventory: Inbound Receipts, Internal Transfers, and Outgoing Deliveries.
 
@@ -195,7 +219,7 @@ Represents all physical movements of inventory: Inbound Receipts, Internal Trans
 
 ---
 
-### 3.6 Lots & Serial Numbers (`stock.lot`)
+### 3.7 Lots & Serial Numbers (`stock.lot`)
 
 | Field Name | Type | Requirement | Default | Description |
 | :--- | :--- | :--- | :--- | :--- |
@@ -206,7 +230,7 @@ Represents all physical movements of inventory: Inbound Receipts, Internal Trans
 
 ---
 
-### 3.7 Reordering Rules (`stock.warehouse.orderpoint`)
+### 3.8 Reordering Rules (`stock.warehouse.orderpoint`)
 
 Automates stock replenishment when available quantities drop below safety thresholds.
 
@@ -263,9 +287,11 @@ Content-Type: application/json; charset=utf-8
 
 ---
 
-### Step 2: Catalog Sync: Creating Products & Variants
+### Step 2: Catalog Sync: Products, Variants & Multiple Images Gallery
 
-#### 2.1 Create a Storable Product Template
+#### 2.1 Create a Storable Product Template with Primary Image
+Create the parent product record and assign its main hero image directly via base64 encoded binary string in `image_1920`:
+
 ```http
 POST /json/2/product.template/create HTTP/1.1
 Host: mycompany.odoo.com
@@ -282,6 +308,7 @@ Content-Type: application/json; charset=utf-8
       "standard_price": 18.50,
       "default_code": "SKU-MOUSE-SLIM-01",
       "barcode": "079357318921",
+      "image_1920": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
       "weight": 0.12,
       "sale_ok": true,
       "purchase_ok": true,
@@ -297,7 +324,245 @@ Content-Type: application/json; charset=utf-8
 ```
 *(Returns newly created product template ID `620`)*
 
-#### 2.2 Retrieve the Generated `product.product` Variant ID
+---
+
+#### 2.2 Create a Product with Multiple Extra Gallery Images (One-Shot Embedded Creation)
+To upload both the product and its entire gallery of extra media in a single atomic API call, use Odoo's One2many ORM command tuples `[0, 0, {...}]` inside `product_template_image_ids`:
+
+```http
+POST /json/2/product.template/create HTTP/1.1
+Host: mycompany.odoo.com
+Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Content-Type: application/json; charset=utf-8
+
+{
+  "vals_list": [
+    {
+      "name": "Mechanical RGB Gaming Keyboard",
+      "detailed_type": "product",
+      "categ_id": 1,
+      "list_price": 129.99,
+      "default_code": "SKU-KB-RGB-01",
+      "image_1920": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+      "product_template_image_ids": [
+        [
+          0,
+          0,
+          {
+            "name": "Side Angle Ergonomic Profile",
+            "image_1920": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+            "sequence": 1
+          }
+        ],
+        [
+          0,
+          0,
+          {
+            "name": "RGB Backlight Modes in the Dark",
+            "image_1920": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkWPifDwAEeAGV7R8j4QAAAABJRU5ErkJggg==",
+            "sequence": 2
+          }
+        ],
+        [
+          0,
+          0,
+          {
+            "name": "Keycap Puller and Packaging Box",
+            "image_1920": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mOU/88AAAYEAd8mXb+KAAAAAElFTkSuQmCC",
+            "sequence": 3
+          }
+        ]
+      ]
+    }
+  ]
+}
+```
+
+**Success Response (`200 OK`):**
+```json
+[621]
+```
+
+---
+
+#### 2.3 Add Extra Images to an Existing Product (`product.image/create`)
+If the product template already exists, add additional gallery images in bulk by passing multiple records in `vals_list` on the `product.image` endpoint:
+
+```http
+POST /json/2/product.image/create HTTP/1.1
+Host: mycompany.odoo.com
+Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Content-Type: application/json; charset=utf-8
+
+{
+  "vals_list": [
+    {
+      "name": "Top View & Sensor Close-up",
+      "product_tmpl_id": 620,
+      "image_1920": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+      "sequence": 1
+    },
+    {
+      "name": "Charging Cable & Dongle",
+      "product_tmpl_id": 620,
+      "image_1920": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkWPifDwAEeAGV7R8j4QAAAABJRU5ErkJggg==",
+      "sequence": 2
+    },
+    {
+      "name": "Official Product Feature Video",
+      "product_tmpl_id": 620,
+      "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "sequence": 3
+    }
+  ]
+}
+```
+
+**Success Response (`200 OK`):**
+```json
+[45, 46, 47]
+```
+*(Returns IDs of the newly created `product.image` records: `45`, `46`, `47`)*
+
+---
+
+#### 2.4 Attach Variant-Specific Extra Images (`product_variant_id`)
+When selling variant products (e.g., a mouse in Midnight Black vs. Pearl White), you can restrict extra gallery images to display **only when that specific variant is selected** by linking `product_variant_id`:
+
+```http
+POST /json/2/product.image/create HTTP/1.1
+Host: mycompany.odoo.com
+Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Content-Type: application/json; charset=utf-8
+
+{
+  "vals_list": [
+    {
+      "name": "Pearl White Finish Close-up",
+      "product_tmpl_id": 620,
+      "product_variant_id": 1056,
+      "image_1920": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mOU/88AAAYEAd8mXb+KAAAAAElFTkSuQmCC",
+      "sequence": 1
+    }
+  ]
+}
+```
+
+**Success Response (`200 OK`):**
+```json
+[48]
+```
+
+---
+
+#### 2.5 Reorder & Update Gallery Images (`product.image/write`)
+Change the display order or update metadata of existing gallery items:
+
+```http
+POST /json/2/product.image/write HTTP/1.1
+Host: mycompany.odoo.com
+Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Content-Type: application/json; charset=utf-8
+
+{
+  "ids": [45],
+  "values": {
+    "sequence": 10,
+    "name": "Updated Top View (High-Res)"
+  }
+}
+```
+
+**Success Response (`200 OK`):**
+```json
+true
+```
+
+---
+
+#### 2.6 Query & Retrieve Product Gallery Images (`product.image/search_read`)
+Query extra images linked to a product template or variant without requesting large binary fields in bulk:
+
+```http
+POST /json/2/product.image/search_read HTTP/1.1
+Host: mycompany.odoo.com
+Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Content-Type: application/json; charset=utf-8
+
+{
+  "domain": [
+    ["product_tmpl_id", "=", 620]
+  ],
+  "fields": [
+    "id",
+    "name",
+    "sequence",
+    "product_variant_id",
+    "video_url",
+    "write_date"
+  ],
+  "order": "sequence asc, id asc"
+}
+```
+
+**Success Response (`200 OK`):**
+```json
+[
+  {
+    "id": 45,
+    "name": "Updated Top View (High-Res)",
+    "sequence": 1,
+    "product_variant_id": false,
+    "video_url": false,
+    "write_date": "2026-08-23 10:15:30"
+  },
+  {
+    "id": 46,
+    "name": "Charging Cable & Dongle",
+    "sequence": 2,
+    "product_variant_id": false,
+    "video_url": false,
+    "write_date": "2026-08-23 09:40:12"
+  },
+  {
+    "id": 48,
+    "name": "Pearl White Finish Close-up",
+    "sequence": 1,
+    "product_variant_id": [1056, "Ultra-Slim Wireless Mouse (Pearl White)"],
+    "video_url": false,
+    "write_date": "2026-08-23 10:20:00"
+  }
+]
+```
+
+> [!TIP]
+> **High-Performance Image Serving:** Do not pull `image_1920` base64 strings in API searches. Instead, construct direct, cacheable web URLs pointing to Odoo's image route using the record ID and timestamp for cache busting:
+> `https://mycompany.odoo.com/web/image/product.image/45/image_512?unique=20260823101530`
+
+---
+
+#### 2.7 Delete / Remove an Image (`product.image/unlink`)
+Remove an image from the gallery permanently:
+
+```http
+POST /json/2/product.image/unlink HTTP/1.1
+Host: mycompany.odoo.com
+Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Content-Type: application/json; charset=utf-8
+
+{
+  "ids": [47]
+}
+```
+
+**Success Response (`200 OK`):**
+```json
+true
+```
+
+---
+
+#### 2.8 Retrieve the Generated `product.product` Variant ID
 When a template is created, Odoo automatically creates the corresponding variant. Find its ID:
 
 ```http
@@ -889,3 +1154,13 @@ When synchronizing end-of-day stock counts from an external Warehouse Management
 ### 5. Multi-Warehouse Routing
 If your e-commerce store fulfills orders from multiple regional warehouses (e.g. US-East, US-West, EU):
 - Pass `"context": {"warehouse": warehouse_id}` when reading `free_qty` to get accurate regional stock for geo-routed order allocation.
+
+### 6. High-Performance Product Image Handling & CDN Caching
+- **Avoid Base64 in Search Payloads:** Never request `image_1920` or other binary fields in catalog listing search queries. Exclude binary fields from `fields` to prevent megabytes of base64 transfer over HTTP.
+- **Direct Cacheable Image URLs:** Construct direct image URLs for storefront display:
+  - Product Template Primary: `https://mycompany.odoo.com/web/image/product.template/<template_id>/image_512`
+  - Product Variant Primary: `https://mycompany.odoo.com/web/image/product.product/<variant_id>/image_512`
+  - Extra Media Gallery Image: `https://mycompany.odoo.com/web/image/product.image/<image_id>/image_1024`
+- **Cache Invalidation via `write_date`:** Append the Unix timestamp or formatted `write_date` query parameter (e.g. `?unique=1755950400`) to let CDNs and browsers aggressively cache images until modified in Odoo.
+- **Appropriate Thumbnail Sizing:** Use `image_128` for search dropdowns and order lines, `image_512` for catalog grids and category listings, and `image_1024` or `image_1920` for product zoom views.
+
