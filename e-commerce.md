@@ -264,7 +264,7 @@ Content-Type: application/json; charset=utf-8
 {
   "domain": [
     ["name", "ilike", "Discount"],
-    ["detailed_type", "=", "service"]
+    ["type", "=", "service"]
   ],
   "fields": ["id", "name"],
   "limit": 1
@@ -739,7 +739,7 @@ Content-Type: application/json; charset=utf-8
 
 {
   "ids": [1889],
-  "values": {
+  "vals": {
     "discount": 15.0
   }
 }
@@ -797,7 +797,7 @@ Content-Type: application/json; charset=utf-8
 
 {
   "ids": [480],
-  "values": {
+  "vals": {
     "points": 250.0
   }
 }
@@ -823,7 +823,7 @@ Content-Type: application/json; charset=utf-8
 
 {
   "ids": [501],
-  "values": {
+  "vals": {
     "points": 0.0,
     "use_count": 1
   }
@@ -846,7 +846,7 @@ Content-Type: application/json; charset=utf-8
 
 {
   "ids": [501],
-  "values": {
+  "vals": {
     "points": 1.0,
     "use_count": 0
   }
@@ -943,7 +943,7 @@ Content-Type: application/json; charset=utf-8
 
 {
   "ids": [782],
-  "values": {
+  "vals": {
     "pricelist_id": 4
   }
 }

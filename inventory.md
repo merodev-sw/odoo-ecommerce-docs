@@ -39,10 +39,14 @@ This guide provides an end-to-end technical reference for backend developers int
 
 Understanding how Odoo tracks physical stock versus logical availability is critical for an e-commerce integration.
 
-### Product Types
-- **`detailed_type: 'product'` (Storable Product):** Physical goods tracked in inventory. Stock levels (`qty_available`, `free_qty`) are calculated and stock moves are generated. **(Use this for all physical e-commerce items)**.
-- **`detailed_type: 'consu'` (Consumable):** Physical products where stock levels are not tracked.
-- **`detailed_type: 'service'` (Service):** Non-physical products (e.g. Installation, Extended Warranty).
+### Product Types (Odoo 19)
+- **Storable Product (`is_storable: true`, `type: 'consu'`):** Physical goods tracked in inventory. Stock levels (`qty_available`, `free_qty`) are calculated and stock moves are generated. **(Use this for all physical e-commerce items)**.
+- **Consumable Product (`is_storable: false`, `type: 'consu'`):** Physical goods where stock levels are not tracked.
+- **Service (`is_storable: false`, `type: 'service'`):** Non-physical items (e.g. Installation, Extended Warranty, Gift Wrapping).
+- **Combo Product (`type: 'combo'`):** Product bundles/kits.
+
+> [!NOTE]
+> **Odoo 19 Architecture Note:** In Odoo 18 and Odoo 19, the legacy `detailed_type` field was deprecated/removed. Inventory tracking is now controlled by the boolean flag **`is_storable: true`** alongside **`type: 'consu'`**.
 
 ### Key Stock Metrics for E-Commerce
 
@@ -97,7 +101,8 @@ The base product definition. A template can represent a single standalone produc
 | Field Name | Type | Requirement | Default | Description & E-Commerce Purpose |
 | :--- | :--- | :--- | :--- | :--- |
 | `name` | `Char` | **REQUIRED** | — | Title/Name of the product (e.g., `Pro Gaming Mechanical Keyboard`). |
-| `detailed_type` | `Selection` | **REQUIRED** | `'product'` | Product tracking type: `'product'` (Storable / Tracked), `'consu'` (Consumable), `'service'` (Service). |
+| `is_storable` | `Boolean` | Optional | `false` | **Set to `true` for physical storable products** tracked with stock moves and quants. |
+| `type` | `Selection` | **REQUIRED** | `'consu'` | Product classification: `'consu'` (Goods/Materials), `'service'` (Service), `'combo'` (Combo Kit). |
 | `categ_id` | `Many2one` (`product.category`) | **REQUIRED** | Company Default | Product category ID (e.g., Electronics, Apparel). |
 | `list_price` | `Float` | Optional | `0.0` | Base selling price before customer-specific pricelists. |
 | `standard_price`| `Float` | Optional | `0.0` | Cost price (used for margin and inventory valuation calculations). |
@@ -302,7 +307,8 @@ Content-Type: application/json; charset=utf-8
   "vals_list": [
     {
       "name": "Ultra-Slim Wireless Mouse",
-      "detailed_type": "product",
+      "is_storable": true,
+      "type": "consu",
       "categ_id": 1,
       "list_price": 49.99,
       "standard_price": 18.50,
@@ -339,7 +345,8 @@ Content-Type: application/json; charset=utf-8
   "vals_list": [
     {
       "name": "Mechanical RGB Gaming Keyboard",
-      "detailed_type": "product",
+      "is_storable": true,
+      "type": "consu",
       "categ_id": 1,
       "list_price": 129.99,
       "default_code": "SKU-KB-RGB-01",
@@ -466,7 +473,7 @@ Content-Type: application/json; charset=utf-8
 
 {
   "ids": [45],
-  "values": {
+  "vals": {
     "sequence": 10,
     "name": "Updated Top View (High-Res)"
   }
@@ -998,7 +1005,7 @@ Content-Type: application/json; charset=utf-8
 
 {
   "domain": [
-    ["detailed_type", "=", "product"],
+    ["is_storable", "=", true],
     ["sale_ok", "=", true]
   ],
   "fields": [
