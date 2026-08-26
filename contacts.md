@@ -80,7 +80,7 @@ Authentication uses **API Keys** passed as a `bearer` token in the `Authorizatio
 | Header | Requirement | Example Value | Description |
 | :--- | :--- | :--- | :--- |
 | `Host` | **Required** | `mycompany.odoo.com` | Hostname of the Odoo instance. |
-| `Authorization` | **Required** | `bearer 6578616d706c65206a736f6e20617069206b6579` | Bearer token containing the API key. |
+| `Authorization` | **Required** | `bearer <API_KEY>` | Bearer token containing the API key. |
 | `Content-Type` | **Required** | `application/json; charset=utf-8` | Indicates JSON payload. |
 | `X-Odoo-Database` | **Conditional** | `mycompany_prod` | Required if the host manages multiple databases. |
 | `User-Agent` | **Recommended** | `MyStore-Ecommerce/1.0` | Client identification string for logging. |
@@ -216,7 +216,7 @@ Before creating contacts with addresses, map your e-commerce ISO-2 country codes
 ```http
 POST /json/2/res.country/search_read HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -241,7 +241,7 @@ Content-Type: application/json; charset=utf-8
 ```http
 POST /json/2/res.country.state/search_read HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -274,7 +274,7 @@ Before inserting a new customer, check if a partner with the same email or e-com
 ```http
 POST /json/2/res.partner/search_read HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -317,7 +317,7 @@ Call the `create` method with `vals_list` (an array containing objects of field 
 ```http
 POST /json/2/res.partner/create HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -355,7 +355,7 @@ Content-Type: application/json; charset=utf-8
 ```http
 POST /json/2/res.partner/create HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -397,7 +397,7 @@ In Odoo, secondary delivery and invoicing addresses are child records attached t
 ```http
 POST /json/2/res.partner/create HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -428,7 +428,7 @@ Content-Type: application/json; charset=utf-8
 ```http
 POST /json/2/res.partner/create HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -463,7 +463,7 @@ To avoid multiple round trips, you can create the parent customer and all child 
 ```http
 POST /json/2/res.partner/create HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -527,7 +527,7 @@ Content-Type: application/json; charset=utf-8
 ```http
 POST /json/2/res.partner/read HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -574,7 +574,7 @@ Content-Type: application/json; charset=utf-8
 ```http
 POST /json/2/res.partner/search_read HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -653,7 +653,7 @@ To update a contact or address, call `write` with `ids` (array of record IDs) an
 ```http
 POST /json/2/res.partner/write HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -682,7 +682,7 @@ Archiving preserves historical invoices, delivery orders, and quotations while r
 ```http
 POST /json/2/res.partner/write HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -705,7 +705,7 @@ true
 ```http
 POST /json/2/res.partner/unlink HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -729,7 +729,7 @@ Discover all available fields, their technical types, help strings, and requirem
 ```http
 POST /json/2/res.partner/fields_get HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -784,7 +784,7 @@ Content-Type: application/json; charset=utf-8
 ```http
 POST /json/2/res.partner/search_read HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -873,7 +873,7 @@ Triggered when attempting to create a record without a mandatory field (e.g. omi
 ```http
 POST /json/2/res.partner/create HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -908,7 +908,7 @@ Triggered when calling `read` or `write` on a record ID that does not exist.
 ```http
 POST /json/2/res.partner/read HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -957,7 +957,7 @@ Triggered when attempting to hard delete a customer who has existing sales order
 ```http
 POST /json/2/res.partner/unlink HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {

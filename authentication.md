@@ -36,7 +36,7 @@ In Odoo 19+, all external API interactions use **Bearer Token Authentication** p
 │                       E-Commerce Backend Application                        │
 └──────────────────────────────────────┬──────────────────────────────────────┘
                                        │ HTTP POST with Header:
-                                       │ Authorization: bearer <160-bit-key>
+                                       │ Authorization: bearer <API_KEY>
                                        ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                           Odoo JSON-2 Gateway                               │
@@ -77,7 +77,7 @@ To enable programmatic API key generation and rotation for non-admin bot users, 
 Generates a new 160-bit API key authenticated by an existing valid key.
 
 - **Endpoint:** `POST https://<odoo-domain>/json/2/res.users.apikeys/generate`
-- **Authentication:** `Authorization: bearer <CURRENT_VALID_KEY>`
+- **Authentication:** `Authorization: bearer <API_KEY>`
 
 #### Request Parameters Table
 
@@ -153,7 +153,7 @@ Perform a lightweight check to ensure the existing key has not been revoked or e
 ```http
 POST /json/2/res.users/context_get HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 X-Odoo-Database: mycompany_db
 User-Agent: MyStore-AuthManager/1.0
@@ -180,7 +180,7 @@ Call `res.users.apikeys/generate` with a new expiration date (e.g. 60–90 days 
 ```http
 POST /json/2/res.users.apikeys/generate HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 X-Odoo-Database: mycompany_db
 User-Agent: MyStore-AuthManager/1.0
@@ -218,7 +218,7 @@ Before revoking the old key, execute an authenticated request using the **new ke
 ```http
 POST /json/2/res.users/context_get HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 9f8c2b7e14a60d38e20f1b5c4901e87d3a2f64c1
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 X-Odoo-Database: mycompany_db
 User-Agent: MyStore-AuthManager/1.0
@@ -245,7 +245,7 @@ Now that the new key is active and verified, revoke the old key. Authenticate us
 ```http
 POST /json/2/res.users.apikeys/revoke HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 9f8c2b7e14a60d38e20f1b5c4901e87d3a2f64c1
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 X-Odoo-Database: mycompany_db
 User-Agent: MyStore-AuthManager/1.0
@@ -378,7 +378,7 @@ Occurs when setting `expiration_date` further into the future than the security 
 ```http
 POST /json/2/res.users.apikeys/generate HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {

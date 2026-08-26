@@ -84,7 +84,7 @@ Every API operation is an **HTTP `POST`** to `/json/2/<model>/<method>`.
 ### Required Headers
 ```http
 Host: mycompany.odoo.com
-Authorization: bearer <YOUR_160_BIT_API_KEY>
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 X-Odoo-Database: mycompany_db
 User-Agent: MyStore-Inventory-Sync/1.0
@@ -260,7 +260,7 @@ Before managing stock, query Odoo to find your primary warehouse ID and internal
 ```http
 POST /json/2/stock.location/search_read HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -300,7 +300,7 @@ Create the parent product record and assign its main hero image directly via bas
 ```http
 POST /json/2/product.template/create HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -338,7 +338,7 @@ To upload both the product and its entire gallery of extra media in a single ato
 ```http
 POST /json/2/product.template/create HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -398,7 +398,7 @@ If the product template already exists, add additional gallery images in bulk by
 ```http
 POST /json/2/product.image/create HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -439,7 +439,7 @@ When selling variant products (e.g., a mouse in Midnight Black vs. Pearl White),
 ```http
 POST /json/2/product.image/create HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -468,7 +468,7 @@ Change the display order or update metadata of existing gallery items:
 ```http
 POST /json/2/product.image/write HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -493,7 +493,7 @@ Query extra images linked to a product template or variant without requesting la
 ```http
 POST /json/2/product.image/search_read HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -554,7 +554,7 @@ Remove an image from the gallery permanently:
 ```http
 POST /json/2/product.image/unlink HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -575,7 +575,7 @@ When a template is created, Odoo automatically creates the corresponding variant
 ```http
 POST /json/2/product.product/search_read HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -610,7 +610,7 @@ Use this call during e-commerce cart/checkout validation to confirm that product
 ```http
 POST /json/2/product.product/search_read HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -660,7 +660,7 @@ Pass the `warehouse` or `location` integer ID in the `context` parameter to quer
 ```http
 POST /json/2/product.product/read HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -695,7 +695,7 @@ When your warehouse system, 3PL, or manual audit provides a new absolute physica
 ```http
 POST /json/2/stock.quant/create HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -721,7 +721,7 @@ Calling `action_apply_inventory` instructs Odoo to generate the internal adjustm
 ```http
 POST /json/2/stock.quant/action_apply_inventory HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -744,7 +744,7 @@ When receiving an inbound shipment from a vendor or manufacturer into the wareho
 ```http
 POST /json/2/stock.picking.type/search_read HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -772,7 +772,7 @@ Content-Type: application/json; charset=utf-8
 ```http
 POST /json/2/stock.picking/create HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -813,7 +813,7 @@ Once goods arrive at the dock and are verified:
 ```http
 POST /json/2/stock.move/search_read HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -825,7 +825,7 @@ Content-Type: application/json; charset=utf-8
 ```http
 POST /json/2/stock.move/write HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -845,7 +845,7 @@ true
 ```http
 POST /json/2/stock.picking/button_validate HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -868,7 +868,7 @@ Move inventory from storage bins to storefront packing areas or between warehous
 ```http
 POST /json/2/stock.picking/create HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -914,7 +914,7 @@ For products with high value or expiration dates, manage serial numbers (`tracki
 ```http
 POST /json/2/stock.lot/create HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -937,7 +937,7 @@ Content-Type: application/json; charset=utf-8
 ```http
 POST /json/2/stock.quant/search_read HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -969,7 +969,7 @@ Configure minimum stock thresholds so Odoo automatically creates purchase propos
 ```http
 POST /json/2/stock.warehouse.orderpoint/create HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -1000,7 +1000,7 @@ Used to synchronize your store's inventory feed periodically.
 ```http
 POST /json/2/product.product/search_read HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -1060,7 +1060,7 @@ Occurs when trying to set `inventory_quantity` on a service or consumable item.
 ```http
 POST /json/2/stock.quant/create HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {

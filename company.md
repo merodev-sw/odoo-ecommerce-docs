@@ -125,7 +125,7 @@ Every API operation is an **HTTP `POST`** to `/json/2/<model>/<method>`.
 
 ```http
 Host: mycompany.odoo.com
-Authorization: bearer <YOUR_160_BIT_API_KEY>
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 X-Odoo-Database: mycompany_db
 User-Agent: MyStore-Ecommerce-MultiCompany/1.0
@@ -970,7 +970,7 @@ When a customer checks out on `eu.mystore.com`:
 #### Example 1: Fetch All Companies and IDs
 ```bash
 curl -X POST "https://mycompany.odoo.com/json/2/res.company/search_read" \
-  -H "Authorization: bearer 6578616d706c6520617069206b657920313630626974" \
+  -H "Authorization: bearer <API_KEY>" \
   -H "Content-Type: application/json" \
   -H "X-Odoo-Database: mycompany_db" \
   -d '{
@@ -983,7 +983,7 @@ curl -X POST "https://mycompany.odoo.com/json/2/res.company/search_read" \
 #### Example 2: Fetch Sales Orders for Company 2
 ```bash
 curl -X POST "https://mycompany.odoo.com/json/2/sale.order/search_read" \
-  -H "Authorization: bearer 6578616d706c6520617069206b657920313630626974" \
+  -H "Authorization: bearer <API_KEY>" \
   -H "Content-Type: application/json" \
   -H "X-Odoo-Database: mycompany_db" \
   -d '{
@@ -1000,7 +1000,7 @@ curl -X POST "https://mycompany.odoo.com/json/2/sale.order/search_read" \
 #### Example 3: Fetch Shared Master Products
 ```bash
 curl -X POST "https://mycompany.odoo.com/json/2/product.template/search_read" \
-  -H "Authorization: bearer 6578616d706c6520617069206b657920313630626974" \
+  -H "Authorization: bearer <API_KEY>" \
   -H "Content-Type: application/json" \
   -H "X-Odoo-Database: mycompany_db" \
   -d '{

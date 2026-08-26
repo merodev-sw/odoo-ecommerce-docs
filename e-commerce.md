@@ -105,7 +105,7 @@ Every API operation is an **HTTP `POST`** to `/json/2/<model>/<method>`.
 ### Required Headers
 ```http
 Host: mycompany.odoo.com
-Authorization: bearer <YOUR_160_BIT_API_KEY>
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 X-Odoo-Database: mycompany_db
 User-Agent: MyStore-Ecommerce-Promotions/1.0
@@ -258,7 +258,7 @@ Odoo requires a service product to represent the discount line on sales orders:
 ```http
 POST /json/2/product.product/search_read HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -287,7 +287,7 @@ Create the `loyalty.program` record embedding both `rule_ids` (with code `SUMMER
 ```http
 POST /json/2/loyalty.program/create HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -347,7 +347,7 @@ Used for influencer affiliate campaigns, VIP customer apology codes, or welcome 
 ```http
 POST /json/2/loyalty.program/create HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -386,7 +386,7 @@ Insert unique coupon cards linked to program ID `13`:
 ```http
 POST /json/2/loyalty.card/create HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -428,7 +428,7 @@ Buy at least 2 units of Product A (`product_id = 1042`), get 1 unit of Product B
 ```http
 POST /json/2/loyalty.program/create HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -478,7 +478,7 @@ Automatically grant free standard delivery on all carts exceeding $75.
 ```http
 POST /json/2/loyalty.program/create HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -526,7 +526,7 @@ Content-Type: application/json; charset=utf-8
 ```http
 POST /json/2/loyalty.program/create HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -563,7 +563,7 @@ Content-Type: application/json; charset=utf-8
 ```http
 POST /json/2/loyalty.card/create HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -622,7 +622,7 @@ Query active promotion rules matching the customer's entered string:
 ```http
 POST /json/2/loyalty.rule/search_read HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -664,7 +664,7 @@ Fetch the exact discount parameters configured for program `12`:
 ```http
 POST /json/2/loyalty.reward/search_read HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -705,7 +705,7 @@ Calculate the discount ($299.99 $\times$ 20% = $60.00, capped at $50.00) and app
 ```http
 POST /json/2/sale.order.line/create HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -734,7 +734,7 @@ If your storefront offers a per-item promotional discount (e.g. 15% off a specif
 ```http
 POST /json/2/sale.order.line/write HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -760,7 +760,7 @@ Find the customer's loyalty card for program `10` (e.g. Points Program):
 ```http
 POST /json/2/loyalty.card/search_read HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -792,7 +792,7 @@ Deduct 100 points from the card and insert the reward line on the sales order:
 ```http
 POST /json/2/loyalty.card/write HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -818,7 +818,7 @@ When the customer successfully completes payment and the order is confirmed:
 ```http
 POST /json/2/loyalty.card/write HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -841,7 +841,7 @@ If the customer cancels the order or requests a full refund before fulfillment:
 ```http
 POST /json/2/loyalty.card/write HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -869,7 +869,7 @@ Pricelists allow automatic computation of tiered pricing based on customer group
 ```http
 POST /json/2/product.pricelist/search_read HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -907,7 +907,7 @@ Add a rule giving 25% discount when buying 10 or more units of a specific produc
 ```http
 POST /json/2/product.pricelist.item/create HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -938,7 +938,7 @@ Assign the wholesale pricelist directly to the quotation `sale.order`:
 ```http
 POST /json/2/sale.order/write HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -964,7 +964,7 @@ true
 ```http
 POST /json/2/loyalty.rule/search_read HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -986,7 +986,7 @@ Content-Type: application/json; charset=utf-8
 ```http
 POST /json/2/loyalty.reward/search_read HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -1008,7 +1008,7 @@ Content-Type: application/json; charset=utf-8
 ```http
 POST /json/2/sale.order.line/create HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {

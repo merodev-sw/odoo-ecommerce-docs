@@ -70,7 +70,7 @@ Every API operation is an **HTTP `POST`** to `/json/2/<model>/<method>`.
 ### Required Headers
 ```http
 Host: mycompany.odoo.com
-Authorization: bearer <YOUR_160_BIT_API_KEY>
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 X-Odoo-Database: mycompany_db
 User-Agent: MyStore-Ecommerce-Backend/1.0
@@ -226,7 +226,7 @@ Map your e-commerce SKUs to Odoo `product.product` IDs and determine active taxe
 ```http
 POST /json/2/product.product/search_read HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -256,7 +256,7 @@ Content-Type: application/json; charset=utf-8
 ```http
 POST /json/2/account.tax/search_read HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -290,7 +290,7 @@ Create the sales order with items, shipping fees, and discounts in a single atom
 ```http
 POST /json/2/sale.order/create HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -347,7 +347,7 @@ Confirming the order updates its status from `draft` to `sale`. This automatical
 ```http
 POST /json/2/sale.order/action_confirm HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -367,7 +367,7 @@ true
 ```http
 POST /json/2/sale.order/read HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -402,7 +402,7 @@ You can generate customer invoices either automatically from the sales order or 
 ```http
 POST /json/2/sale.order/_create_invoices HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -425,7 +425,7 @@ For custom billing workflows where you need full control over line items and acc
 ```http
 POST /json/2/account.move/create HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -468,7 +468,7 @@ Posting moves the invoice from `draft` to `posted`, making it official in the le
 ```http
 POST /json/2/account.move/action_post HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -491,7 +491,7 @@ When a customer pays online during checkout, record the payment and reconcile it
 ```http
 POST /json/2/account.journal/search_read HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -522,7 +522,7 @@ This is the standard ORM workflow to post payment and automatically reconcile th
 ```http
 POST /json/2/account.payment.register/create HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -550,7 +550,7 @@ Content-Type: application/json; charset=utf-8
 ```http
 POST /json/2/account.payment.register/action_create_payments HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -569,7 +569,7 @@ Content-Type: application/json; charset=utf-8
 ```http
 POST /json/2/account.move/read HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -602,7 +602,7 @@ When an order is confirmed, Odoo creates a delivery transfer in `stock.picking`.
 ```http
 POST /json/2/stock.picking/search_read HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -640,7 +640,7 @@ When your warehouse or 3PL generates a shipping label:
 ```http
 POST /json/2/stock.picking/write HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -663,7 +663,7 @@ To mark items as shipped and deduct stock from warehouse inventory:
 ```http
 POST /json/2/stock.move/write HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -683,7 +683,7 @@ true
 ```http
 POST /json/2/stock.picking/button_validate HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -707,7 +707,7 @@ If the customer cancels before shipment:
 ```http
 POST /json/2/sale.order/action_cancel HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -726,7 +726,7 @@ When processing a partial or full refund:
 ```http
 POST /json/2/account.move/create HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -763,7 +763,7 @@ Content-Type: application/json; charset=utf-8
 ```http
 POST /json/2/account.move/action_post HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -784,7 +784,7 @@ true
 ```http
 POST /json/2/sale.order/search_read HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -825,7 +825,7 @@ Occurs if an order line is created without a `product_id` or `name`.
 ```http
 POST /json/2/sale.order/create HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
@@ -868,7 +868,7 @@ Occurs when invoking `action_confirm` on an order in `'cancel'` state.
 ```http
 POST /json/2/sale.order/action_confirm HTTP/1.1
 Host: mycompany.odoo.com
-Authorization: bearer 6578616d706c65206a736f6e20617069206b6579
+Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
