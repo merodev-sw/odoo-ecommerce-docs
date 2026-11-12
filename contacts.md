@@ -108,10 +108,12 @@ Below is the complete reference of fields available in `res.partner` for an e-co
 | Field Name | Type | Requirement | Default | Description & E-Commerce Purpose |
 | :--- | :--- | :--- | :--- | :--- |
 | `email` | `Char` | Optional | `null` | Primary email address. Essential for customer login matching, order confirmations, and invoices. |
-| `phone` | `Char` | Optional | `null` | Primary telephone / landline number. |
-| `mobile` | `Char` | Optional | `null` | Mobile phone number (used for delivery SMS notifications and shipping courier contact). |
+| `phone` | `Char` | Optional | `null` | Primary telephone or mobile number (used for order notifications, SMS, and courier contact). |
 | `website` | `Char` | Optional | `null` | Customer / Company website URL. |
 | `lang` | `Selection` | Optional | System default | Preferred customer language code (e.g., `'en_US'`, `'fr_FR'`, `'es_ES'`, `'de_DE'`, `'ar_001'`). Used for localized transactional emails and PDF invoices. |
+
+> [!WARNING]
+> **Odoo 19 Breaking Change (`mobile` field removed):** In Odoo 19, the separate `mobile` field on `res.partner` was removed and consolidated into `phone`. Do not pass or request `mobile` in `res.partner` payloads, as it will fail with `Invalid field 'mobile' on model 'res.partner'`.
 
 ### 3.3 Physical & Postal Address
 
@@ -328,7 +330,6 @@ Content-Type: application/json; charset=utf-8
       "company_type": "person",
       "email": "alex.morgan@example.com",
       "phone": "+1 415 555 0192",
-      "mobile": "+1 415 555 0199",
       "street": "100 Market Street",
       "street2": "Suite 400",
       "city": "San Francisco",
@@ -412,8 +413,7 @@ Content-Type: application/json; charset=utf-8
       "state_id": 1422,
       "country_id": 233,
       "zip": "94607",
-      "phone": "+1 510 555 9931",
-      "mobile": "+1 510 555 9932"
+      "phone": "+1 510 555 9931"
     }
   ]
 }
@@ -536,7 +536,6 @@ Content-Type: application/json; charset=utf-8
     "name",
     "email",
     "phone",
-    "mobile",
     "street",
     "street2",
     "city",
@@ -557,7 +556,6 @@ Content-Type: application/json; charset=utf-8
     "name": "Alex Morgan",
     "email": "alex.morgan@example.com",
     "phone": "+1 415 555 0192",
-    "mobile": "+1 415 555 0199",
     "street": "100 Market Street",
     "street2": "Suite 400",
     "city": "San Francisco",

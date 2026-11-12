@@ -101,7 +101,8 @@ The `sale.order` model represents customer quotations and confirmed sales orders
 | `payment_term_id` | `Many2one` (`account.payment.term`) | Optional | Partner default | Payment terms ID (e.g., Immediate Payment). |
 | `origin` | `Char` | Optional | `null` | Channel source label (e.g., `"Web Store"`, `"Mobile App iOS"`). |
 | `note` | `Html` / `Text` | Optional | `null` | Customer notes, gift messages, or terms displayed on order confirmation PDF. |
-| `state` | `Selection` | *System-managed* | `'draft'` | Status: `'draft'` (Quotation), `'sent'` (Quotation Sent), `'sale'` (Confirmed Sales Order), `'cancel'` (Cancelled). |
+| `state` | `Selection` | *System-managed* | `'draft'` | Status: `'draft'` (Quotation), `'sent'` (Quotation Sent), `'sale'` (Confirmed Sales Order), `'cancel'` (Cancelled). *(Note: Legacy `'done'` state was removed in Odoo 17+; use `locked` instead).* |
+| `locked` | `Boolean` | Optional | `false` | Whether the confirmed sales order is locked against further edits (`action_lock` / `action_unlock`). |
 | `invoice_status` | `Selection` | *Computed* | `'no'` | Status: `'upselling'`, `'invoiced'`, `'to invoice'`, `'no'`. |
 | `amount_untaxed` | `Monetary` | *Computed* | `0.0` | Total subtotal before taxes. |
 | `amount_tax` | `Monetary` | *Computed* | `0.0` | Total tax amount. |
@@ -121,7 +122,7 @@ Individual items, fees, discounts, and shipping lines inside `sale.order`.
 | `name` | `Text` | **REQUIRED** | Product name | Item description shown on invoice and packing slip. |
 | `product_uom_qty` | `Float` | **REQUIRED** | `1.0` | Quantity ordered. |
 | `price_unit` | `Float` | Optional | Product pricelist price | Unit selling price. If omitted, Odoo computes it from the active pricelist. |
-| `tax_id` | `Many2many` (`account.tax`) | Optional | Product default taxes | Tax IDs applied to this line (e.g., `[[6, 0, [tax_id]]]`). Set to `[[6, 0, []]]` for tax-exempt. |
+| `tax_ids` | `Many2many` (`account.tax`) | Optional | Product default taxes | Tax IDs applied to this line (e.g., `[[6, 0, [tax_id]]]`). Set to `[[6, 0, []]]` for tax-exempt. *(Renamed from `tax_id` in Odoo 18+).* |
 | `discount` | `Float` | Optional | `0.0` | Percentage discount on the line (e.g., `15.0` for 15% off). |
 | `product_uom` | `Many2one` (`uom.uom`) | Optional | Product UoM | Unit of Measure ID (e.g., Units, kg). |
 | `sequence` | `Integer` | Optional | `10` | Display ordering sequence on the order. |
@@ -188,9 +189,9 @@ Represents incoming customer payments processed through online gateways (Stripe,
 | `partner_type` | `Selection` | **REQUIRED** | `'customer'` | `'customer'` or `'supplier'`. |
 | `journal_id` | `Many2one` (`account.journal`) | **REQUIRED** | — | Payment Journal ID (e.g., Stripe Journal, Bank Journal, PayPal Journal). |
 | `date` | `Date` | Optional | Current date | Payment receipt date (format: `"YYYY-MM-DD"`). |
-| `memo` / `ref` | `Char` | Optional | `null` | Gateway transaction ID (e.g., Stripe Charge `ch_3M49...` or PayPal capture ID). |
+| `memo` | `Char` | Optional | `null` | Gateway transaction ID or payment reference (e.g., Stripe Charge `ch_3M49...`). *(Renamed from `ref` in Odoo 18+).* |
 | `currency_id` | `Many2one` (`res.currency`) | Optional | Journal currency | Payment currency ID. |
-| `state` | `Selection` | *System-managed* | `'draft'` | Status: `'draft'`, `'posted'`, `'cancel'`. |
+| `state` | `Selection` | *System-managed* | `'draft'` | Status: `'draft'`, `'in_process'`, `'paid'`, `'canceled'`, `'rejected'`. |
 
 ---
 
@@ -312,7 +313,7 @@ Content-Type: application/json; charset=utf-8
             "product_uom_qty": 2.0,
             "price_unit": 299.99,
             "discount": 10.0,
-            "tax_id": [[6, 0, [1]]]
+            "tax_ids": [[6, 0, [1]]]
           }
         ],
         [
@@ -323,7 +324,7 @@ Content-Type: application/json; charset=utf-8
             "name": "Express Shipping (2-Day Courier)",
             "product_uom_qty": 1.0,
             "price_unit": 15.00,
-            "tax_id": [[6, 0, []]]
+            "tax_ids": [[6, 0, []]]
           }
         ]
       ]
@@ -398,24 +399,76 @@ Content-Type: application/json; charset=utf-8
 
 You can generate customer invoices either automatically from the sales order or directly via the `account.move` model.
 
-#### Method A: Automatic Invoice Generation from Sales Order (`_create_invoices`)
+#### Method A: Automatic Invoice Generation from Sales Order (`sale.advance.payment.inv`)
+
+> [!WARNING]
+> **Do not call `sale.order/_create_invoices` directly:** In Odoo 19's JSON-2 API, methods prefixed with an underscore (`_`) are private and blocked from remote execution (`403 Forbidden` / `422 Unprocessable Content`). Always trigger invoice generation through the public `sale.advance.payment.inv` wizard.
+
+##### Part 1: Create the Invoice Generation Wizard Record
 ```http
-POST /json/2/sale.order/_create_invoices HTTP/1.1
+POST /json/2/sale.advance.payment.inv/create HTTP/1.1
+Host: mycompany.odoo.com
+Authorization: bearer <API_KEY>
+Content-Type: application/json; charset=utf-8
+
+{
+  "context": {
+    "active_model": "sale.order",
+    "active_ids": [782]
+  },
+  "vals_list": [
+    {
+      "advance_payment_method": "delivered"
+    }
+  ]
+}
+```
+
+**Success Response (`200 OK`):**
+```json
+[41]
+```
+
+##### Part 2: Execute `create_invoices` on the Wizard
+```http
+POST /json/2/sale.advance.payment.inv/create_invoices HTTP/1.1
+Host: mycompany.odoo.com
+Authorization: bearer <API_KEY>
+Content-Type: application/json; charset=utf-8
+
+{
+  "ids": [41],
+  "context": {
+    "active_model": "sale.order",
+    "active_ids": [782]
+  }
+}
+```
+
+##### Part 3: Read the Generated `invoice_ids` from the Sales Order
+```http
+POST /json/2/sale.order/read HTTP/1.1
 Host: mycompany.odoo.com
 Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
   "ids": [782],
-  "final": true
+  "fields": ["invoice_ids", "invoice_status"]
 }
 ```
 
 **Success Response (`200 OK`):**
 ```json
-[1204]
+[
+  {
+    "id": 782,
+    "invoice_ids": [1204],
+    "invoice_status": "invoiced"
+  }
+]
 ```
-*(Returns an array of generated draft invoice IDs `[1204]`)*
+*(Returns the generated draft invoice ID `1204` inside `invoice_ids`)*
 
 ---
 
@@ -790,9 +843,9 @@ Content-Type: application/json; charset=utf-8
 {
   "domain": [
     ["partner_id", "=", 540],
-    ["state", "in", ["sale", "done"]]
+    ["state", "=", "sale"]
   ],
-  "fields": ["name", "client_order_ref", "date_order", "amount_total", "invoice_status"],
+  "fields": ["name", "client_order_ref", "date_order", "amount_total", "invoice_status", "locked"],
   "order": "date_order desc",
   "limit": 10
 }
@@ -807,7 +860,8 @@ Content-Type: application/json; charset=utf-8
     "client_order_ref": "ECOMM-ORD-2026-8812",
     "date_order": "2026-08-16 12:30:00",
     "amount_total": 608.97,
-    "invoice_status": "invoiced"
+    "invoice_status": "invoiced",
+    "locked": false
   }
 ]
 ```

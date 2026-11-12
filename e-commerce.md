@@ -176,7 +176,8 @@ Defines the benefit given to the customer when rules are met.
 | `discount_product_ids` | `Many2many` (`product.product`) | Optional | `[]` | Specific products that receive the discount (when applicability = `'specific'`). |
 | `discount_product_category_id` | `Many2one` (`product.category`) | Optional | `null` | Product category receiving the discount. |
 | `discount_max_amount` | `Float` | Optional | `0.0` | Maximum cap on discount value (e.g., 20% off up to $50 max). `0.0` = uncapped. |
-| `reward_product_id` | `Many2one` (`product.product`) | **REQUIRED** | Service Product | The service product added as a negative line item on `sale.order.line`. |
+| `discount_line_product_id` | `Many2one` (`product.product`) | *Auto-created* | Service Product | The technical placeholder service product Odoo automatically generates and inserts as a negative line item on `sale.order.line`. |
+| `reward_product_id` | `Many2one` (`product.product`) | Conditional | `null` | **Only for `reward_type = 'product'`:** The actual catalog product given to the customer as a free gift (e.g., BOGO free item). |
 | `required_points` | `Float` | Optional | `1.0` | Loyalty points or coupon credits consumed to grant this reward. |
 | `clear_wallet` | `Boolean` | Optional | `false` | If `true`, consumes all available card points when claimed. |
 
@@ -204,7 +205,7 @@ In Odoo, discounts applied via promotions or coupon rewards are represented on t
 | Field Name | Type | Requirement | Description & E-Commerce Purpose |
 | :--- | :--- | :--- | :--- |
 | `order_id` | `Many2one` (`sale.order`) | **REQUIRED** | Target sales order ID. |
-| `product_id` | `Many2one` (`product.product`) | **REQUIRED** | The discount reward service product (matches `loyalty.reward.reward_product_id`). |
+| `product_id` | `Many2one` (`product.product`) | **REQUIRED** | The discount reward service product (matches `loyalty.reward.discount_line_product_id`). |
 | `name` | `Char` | **REQUIRED** | Line description (e.g., `20% discount on order [SUMMER20]`). |
 | `price_unit` | `Float` | **REQUIRED** | **Negative monetary amount** representing the total discount (e.g., `-25.00`). |
 | `product_uom_qty` | `Float` | **REQUIRED** | Always `1.0`. |
@@ -256,36 +257,9 @@ Used for rule-based catalog price changes, B2B wholesale tiers, and date-restric
 
 Creates a public marketing campaign where any customer typing `SUMMER20` gets 20% off orders over $100.
 
-#### 1.1 Find or Create the Discount Product
-Odoo requires a service product to represent the discount line on sales orders:
+> [!NOTE]
+> When you create a `loyalty.reward` record, Odoo automatically creates and links its underlying `discount_line_product_id` service product behind the scenes. You do not need to pre-create a discount service product manually.
 
-```http
-POST /json/2/product.product/search_read HTTP/1.1
-Host: mycompany.odoo.com
-Authorization: bearer <API_KEY>
-Content-Type: application/json; charset=utf-8
-
-{
-  "domain": [
-    ["name", "ilike", "Discount"],
-    ["type", "=", "service"]
-  ],
-  "fields": ["id", "name"],
-  "limit": 1
-}
-```
-
-**Success Response (`200 OK`):**
-```json
-[
-  {
-    "id": 88,
-    "name": "Discount"
-  }
-]
-```
-
-#### 1.2 Create the Program with Rules and Rewards
 Create the `loyalty.program` record embedding both `rule_ids` (with code `SUMMER20` and min spend $100) and `reward_ids` (20% discount) in a single atomic call:
 
 ```http
@@ -310,6 +284,7 @@ Content-Type: application/json; charset=utf-8
           0,
           0,
           {
+            "mode": "with_code",
             "code": "SUMMER20",
             "minimum_amount": 100.0,
             "minimum_amount_tax_mode": "incl"
@@ -325,8 +300,7 @@ Content-Type: application/json; charset=utf-8
             "discount": 20.0,
             "discount_mode": "percent",
             "discount_applicability": "order",
-            "discount_max_amount": 50.0,
-            "reward_product_id": 88
+            "discount_max_amount": 50.0
           }
         ]
       ]
@@ -369,8 +343,7 @@ Content-Type: application/json; charset=utf-8
             "reward_type": "discount",
             "discount": 25.0,
             "discount_mode": "per_order",
-            "discount_applicability": "order",
-            "reward_product_id": 88
+            "discount_applicability": "order"
           }
         ]
       ]
@@ -507,8 +480,7 @@ Content-Type: application/json; charset=utf-8
           0,
           0,
           {
-            "reward_type": "shipping",
-            "reward_product_id": 88
+            "reward_type": "shipping"
           }
         ]
       ]
@@ -548,8 +520,7 @@ Content-Type: application/json; charset=utf-8
           {
             "reward_type": "discount",
             "discount_mode": "per_point",
-            "discount": 1.0,
-            "reward_product_id": 88
+            "discount": 1.0
           }
         ]
       ]
@@ -682,7 +653,7 @@ Content-Type: application/json; charset=utf-8
     "discount_mode",
     "discount_applicability",
     "discount_max_amount",
-    "reward_product_id"
+    "discount_line_product_id"
   ],
   "limit": 1
 }
@@ -698,7 +669,7 @@ Content-Type: application/json; charset=utf-8
     "discount_mode": "percent",
     "discount_applicability": "order",
     "discount_max_amount": 50.0,
-    "reward_product_id": [88, "Discount"]
+    "discount_line_product_id": [88, "20% on your order"]
   }
 ]
 ```
@@ -816,8 +787,8 @@ true
 
 ### Step 8: Order Confirmation, Coupon Consumption & Cancellation/Refunds
 
-#### 8.1 Increment Coupon Usage Count Upon Order Confirmation
-When the customer successfully completes payment and the order is confirmed:
+#### 8.1 Deducting Coupon Balance Upon Order Confirmation
+When a reward line on `sale.order.line` includes `"coupon_id": 501` and the sales order is confirmed (`action_confirm`), Odoo automatically increments the computed `use_count` on `loyalty.card`. To consume the card's remaining point/voucher balance:
 
 ```http
 POST /json/2/loyalty.card/write HTTP/1.1
@@ -828,8 +799,7 @@ Content-Type: application/json; charset=utf-8
 {
   "ids": [501],
   "vals": {
-    "points": 0.0,
-    "use_count": 1
+    "points": 0.0
   }
 }
 ```
@@ -840,7 +810,7 @@ true
 ```
 
 #### 8.2 Restoring Coupon / Points on Order Cancellation
-If the customer cancels the order or requests a full refund before fulfillment:
+If the customer cancels the order (`sale.order/action_cancel`) or requests a full refund before fulfillment, restore the card's points balance:
 
 ```http
 POST /json/2/loyalty.card/write HTTP/1.1
@@ -851,8 +821,7 @@ Content-Type: application/json; charset=utf-8
 {
   "ids": [501],
   "vals": {
-    "points": 1.0,
-    "use_count": 0
+    "points": 1.0
   }
 }
 ```
@@ -1008,7 +977,7 @@ Content-Type: application/json; charset=utf-8
     "discount",
     "discount_mode",
     "discount_max_amount",
-    "reward_product_id"
+    "discount_line_product_id"
   ]
 }
 ```
@@ -1151,7 +1120,7 @@ Occurs when the coupon applies only to specific categories or product IDs, but n
 
 ### 3. Concurrency & Idempotency during Checkout
 - **Locking Single-Use Coupons:** When a customer enters the payment gateway (e.g. Stripe checkout redirect), place a temporary lock or reservation timestamp on the coupon card in your backend Redis / DB.
-- If the payment succeeds, finalize `use_count: 1` and `points: 0` in Odoo.
+- If the payment succeeds, confirm the order (which increments `use_count` via the linked `coupon_id`) and set `points: 0` on the card in Odoo.
 - If the cart is abandoned or payment fails, release the reservation to allow future redemption.
 
 ### 4. Reverting Discounts on Order Edits / Item Removals

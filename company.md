@@ -97,9 +97,9 @@ Odoo enforces multi-company data isolation using automated database **Record Rul
 
 | Record Classification | `company_id` Value | Visibility Rules | Examples |
 | :--- | :--- | :--- | :--- |
-| **Globally Shared** | `false` / `null` | Visible to **all** companies at all times. | Global customer contacts, master products, global categories, currencies, UoMs. |
-| **Company-Specific** | Integer ID (e.g., `1`) | Visible **only** if the company ID is included in `allowed_company_ids` in the request context. | Sales orders, customer invoices, stock moves, bank accounts, warehouses, POS terminals. |
-| **Multi-Company Enabled** | Array of IDs via `company_ids` | Visible if any of the record's companies overlap with `allowed_company_ids`. | Promotional programs (`loyalty.program`), pricelists (`product.pricelist`), sales teams (`crm.team`). |
+| **Globally Shared** | `false` / `null` | Visible to **all** companies at all times. | Global customer contacts, master products, global pricelists, loyalty programs, currencies, UoMs. |
+| **Company-Specific** | Integer ID (e.g., `1`) | Visible **only** if the company ID is included in `allowed_company_ids` in the request context. | Sales orders, customer invoices, stock moves, bank accounts, warehouses, company-exclusive products/pricelists. |
+| **Multi-Company Assigned** | Array of IDs via `company_ids` | Visible/authorized across the assigned set of companies. | User accounts (`res.users`). |
 
 ### The Role of `allowed_company_ids` & `company_id` in Context
 
@@ -280,7 +280,7 @@ X-Odoo-Database: mycompany_db
     "name": "MyStore UK Ltd.",
     "currency_id": [3, "GBP"],
     "country_id": [231, "United Kingdom"],
-    "parent_id": 1,
+    "parent_id": [1, "MyStore US Inc."],
     "vat": "GB987654321",
     "email": "uk-orders@mystore.com",
     "phone": "+44 20 7946 0912",
@@ -445,7 +445,7 @@ X-Odoo-Database: mycompany_db
   },
   "domain": [
     ["company_id", "=", 2],
-    ["state", "in", ["sale", "done"]]
+    ["state", "=", "sale"]
   ],
   "fields": [
     "id",
@@ -871,7 +871,7 @@ X-Odoo-Database: mycompany_db
     "amount_total": 219.00,
     "currency_id": [1, "USD"],
     "company_id": [1, "MyStore US Inc."],
-    "state": "done",
+    "state": "sale",
     "date_order": "2026-07-14 09:15:33"
   }
 ]
@@ -1067,7 +1067,7 @@ export class OdooMultiCompanyClient {
       },
       domain: [
         ['company_id', '=', companyId],
-        ['state', 'in', ['sale', 'done']],
+        ['state', '=', 'sale'],
       ],
       fields: ['id', 'name', 'client_order_ref', 'partner_id', 'amount_total', 'currency_id'],
       limit,
@@ -1253,20 +1253,19 @@ The API client requests records with `allowed_company_ids: [5]`, but the authent
 #### HTTP Response (`403 Forbidden`)
 ```json
 {
-  "error": {
-    "code": 403,
-    "message": "Access Error",
-    "data": {
-      "name": "odoo.exceptions.AccessError",
-      "message": "You are not allowed to access 'Sales Order' (sale.order) records.\n\nThis operation is allowed for the following groups:\n - Sales/User\n\nCompanies: MyStore Asia Ltd. (id=5) is not in your allowed companies (id=1, 2)."
-    }
-  }
+  "name": "odoo.exceptions.AccessError",
+  "message": "Access to unauthorized or invalid companies.",
+  "arguments": [
+    "Access to unauthorized or invalid companies."
+  ],
+  "context": {},
+  "debug": "Traceback (most recent call last):\n  ...\nodoo.exceptions.AccessError: Access to unauthorized or invalid companies.\n"
 }
 ```
 
 #### Remediation
 1. Log in as an Administrator in Odoo.
-2. Go to **Settings > Users > [Your Bot User]**.
+2. Go to **Settings > Users & Companies > Users > [Your Bot User]**.
 3. Add the missing company to **Allowed Companies**.
 
 ---
@@ -1276,17 +1275,16 @@ The API client requests records with `allowed_company_ids: [5]`, but the authent
 #### Scenario
 An API call creates a Sales Order for **Company 1 (US)**, but references a Warehouse (`warehouse_id`) or Payment Journal (`journal_id`) that belongs to **Company 2 (EU)**.
 
-#### HTTP Response (`400 Bad Request`)
+#### HTTP Response (`422 Unprocessable Content` / `400 Bad Request`)
 ```json
 {
-  "error": {
-    "code": 400,
-    "message": "User Error",
-    "data": {
-      "name": "odoo.exceptions.UserError",
-      "message": "Incompatible companies on records:\n- 'Sales Order S01045' belongs to company 'MyStore US Inc.' (id=1)\n- 'USWH/Stock' warehouse belongs to company 'MyStore Europe B.V.' (id=2)\n\nRecords must belong to the same company."
-    }
-  }
+  "name": "odoo.exceptions.UserError",
+  "message": "Incompatible companies on records:\n- 'S01045' belongs to company 'MyStore US Inc.' and 'Warehouse' (warehouse_id: 'EUWH') belongs to another company.",
+  "arguments": [
+    "Incompatible companies on records:\n- 'S01045' belongs to company 'MyStore US Inc.' and 'Warehouse' (warehouse_id: 'EUWH') belongs to another company."
+  ],
+  "context": {},
+  "debug": "Traceback (most recent call last):\n  ...\nodoo.exceptions.UserError: Incompatible companies on records...\n"
 }
 ```
 

@@ -118,6 +118,9 @@ The base product definition. A template can represent a single standalone produc
 | `tracking` | `Selection` | Optional | `'none'` | Traceability mode: `'none'`, `'serial'` (Unique Serial No. per unit), `'lot'` (Batch / Lot No.). |
 | `active` | `Boolean` | Optional | `true` | Active status. Set to `false` to archive discontinued products. |
 
+> [!IMPORTANT]
+> **`free_qty`, `incoming_qty`, and `outgoing_qty` exist only on `product.product` (variants), not on `product.template`.** While `product.template` aggregates `qty_available` and `virtual_available`, always query `product.product` when checking real-time unreserved stock (`free_qty`).
+
 ---
 
 ### 3.2 Product Variant (`product.product`)
@@ -817,7 +820,7 @@ Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
 
 {
-  "domain": [["raw_material_production_id", "=", false], ["picking_id", "=", 512]],
+  "domain": [["picking_id", "=", 512]],
   "fields": ["id", "product_id", "product_uom_qty"]
 }
 ```
