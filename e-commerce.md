@@ -225,7 +225,11 @@ Used for rule-based catalog price changes, B2B wholesale tiers, and date-restric
 | `name` | `Char` | **REQUIRED** | Pricelist display name (e.g. `Wholesale VIP - 15% Off`). |
 | `currency_id` | `Many2one` (`res.currency`) | **REQUIRED** | Currency for price calculations. |
 | `item_ids` | `One2many` (`product.pricelist.item`) | Optional | List of rules applied by this pricelist. |
-| `discount_policy` | `Selection` | Optional | `'with_discount'` (show discounted price directly) or `'without_discount'` (show original price with strikethrough discount %). |
+| `selectable` | `Boolean` | Optional | Whether this pricelist can be selected by shoppers on the website. |
+| `website_id` | `Many2one` (`website`) | Optional | Restricts pricelist to a specific website (`false` = shared globally). |
+
+> [!NOTE]
+> **Odoo 18/19 Architecture Note:** The legacy header-level `discount_policy` field was removed in Odoo 18. Whether discounts are explicitly itemized or factored into the net unit price is now determined at the rule level via `product.pricelist.item.compute_price` (rules with `percentage` show separate discounts when discount tracking is enabled; `fixed` and `formula` produce net prices). For exhaustive details on dynamic pricing and simulation, see [pricelists.md](pricelists.md).
 
 #### `product.pricelist.item`
 | Field Name | Type | Requirement | Description |
@@ -876,7 +880,7 @@ Content-Type: application/json; charset=utf-8
   "domain": [
     ["active", "=", true]
   ],
-  "fields": ["id", "name", "currency_id", "discount_policy"]
+  "fields": ["id", "name", "currency_id", "selectable", "website_id"]
 }
 ```
 
@@ -887,16 +891,21 @@ Content-Type: application/json; charset=utf-8
     "id": 1,
     "name": "Public Pricelist (USD)",
     "currency_id": [2, "USD"],
-    "discount_policy": "with_discount"
+    "selectable": true,
+    "website_id": false
   },
   {
     "id": 4,
     "name": "B2B Gold Wholesale (15% Off)",
     "currency_id": [2, "USD"],
-    "discount_policy": "without_discount"
+    "selectable": false,
+    "website_id": false
   }
 ]
 ```
+
+> [!TIP]
+> For in-depth documentation on dynamic product pricing, quotation simulation, volume tier matrix generation, and Odoo 19 pricelist rule evaluation, see [pricelists.md](pricelists.md).
 
 ---
 
