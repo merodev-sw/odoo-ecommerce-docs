@@ -10,7 +10,7 @@ This guide is the companion to [inventory.md](inventory.md) (product model) and 
 > - `product.ribbon` ships with the **eCommerce (`website_sale`)** app. On a database where that module is not installed, the model does not exist and every call answers `404 Not Found` with `the model 'product.ribbon' does not exist`.
 > - **ACL:** `read` is granted to internal, portal and public users, while **`create`, `write` and `unlink` are reserved to Sales Managers** (`sales_team.group_sale_manager`). An API key owned by a plain salesperson can *read* the ribbon list but receives `403 Forbidden` on the write operations.
 > - Ribbons are **global configuration**: the model has no `website_id`, `company_id` or `active` field, so the same list is shared by every website of the database.
-> - Odoo allows **at most one automatic ribbon per assignment mode** (`assign = 'sale'` and `assign = 'new'`). Creating a second one raises a `ValidationError` (`422`).
+> - Odoo allows **at most one automatic ribbon per assignment mode** (`assign = 'sale'`, `'new'`, and `'out_of_stock'` when `website_sale_stock` is installed). Creating a second one raises a `ValidationError` (`422`).
 
 ---
 
@@ -52,10 +52,11 @@ Ribbons are rendered on the product image of the `/shop` grid and of the product
 | :--- | :--- | :--- | :--- |
 | `manual` | Shown **only** on the products explicitly linked to the ribbon. | `product.template.website_ribbon_id` or `product.product.variant_ribbon_id` | Editorial flags: `Clearance`, `Staff Pick`, `Exclusive` |
 | `sale` | Shown **automatically** when the displayed price is lower than the comparison price (pricelist discount or `compare_list_price`). | Nowhere — resolved from the ribbon record only | `On Sale` |
-| `new` | Shown **automatically** while the product has been published for less than `new_period` days. | Nowhere — resolved from the ribbon record only | `New` |
+| `new` | Shown **automatically** while the product has been published for at most `new_period` days. | Nowhere — resolved from the ribbon record only | `New` |
+| `out_of_stock` | *(Added by `website_sale_stock`)* Shown **automatically** when a storable product is sold out (`free_qty <= 0`) and `allow_out_of_stock_order` is `false` (excluded for rental products when `website_sale_stock_renting` is installed). | Nowhere — resolved from the ribbon record only | `Out of Stock` / `Sold Out` |
 
 > [!IMPORTANT]
-> **Only one ribbon per automatic mode is allowed.** A second record with `assign = 'sale'` (or `'new'`) is rejected by a Python constraint, because automatic resolution always takes the first matching ribbon. `manual` ribbons are unlimited.
+> **Only one ribbon per automatic mode is allowed.** A second record with `assign = 'sale'`, `'new'`, or `'out_of_stock'` is rejected by a Python constraint (`_check_assign`), because automatic resolution always takes the first matching ribbon. `manual` ribbons are unlimited.
 
 ### Effective Ribbon Resolution (Precedence)
 
@@ -72,7 +73,7 @@ product.template.website_ribbon_id  ─┘
 ```
 
 > [!NOTE]
-> **Private methods are not callable through JSON-2.** The resolver (`_get_ribbon`), the automatic-rule matcher (`_is_applicable_for`) and the CSS helper (`_get_css_classes`) all start with `_`, so they cannot be reached remotely (`403 Forbidden`). Your backend must resolve the ribbon from the field values documented below — see [Rendering Ribbons on Your Storefront](#7-rendering-ribbons-on-your-storefront).
+> **Private methods are not callable through JSON-2.** The resolver (`product.template._get_ribbon`), the automatic-rule matcher (`product.ribbon._is_applicable_for`) and the CSS helper (`product.ribbon._get_css_classes`) all start with `_`, so they cannot be reached remotely (`403 Forbidden`). Your backend must resolve the ribbon from the field values documented below — see [Rendering Ribbons on Your Storefront](#7-rendering-ribbons-on-your-storefront).
 
 ### Entity Relationship Diagram
 
@@ -134,7 +135,7 @@ Ribbon definitions. The model is ordered by `sequence ASC, id` (`_order`), so li
 | `text_color` | `Char` (hex) | **REQUIRED** | `'#FFFFFF'` | Label text color as a CSS hex string. |
 | `position` | `Selection` | **REQUIRED** | `'left'` | Corner of the product image: `'left'`, `'right'`. |
 | `style` | `Selection` | **REQUIRED** | `'ribbon'` | Shape: `'ribbon'` (banner across the image) or `'tag'` (small badge). |
-| `assign` | `Selection` | **REQUIRED** | `'manual'` | Assignment mode: `'manual'` (linked per product), `'sale'` (automatic when a discount is displayed), `'new'` (automatic while the product is "new"). |
+| `assign` | `Selection` | **REQUIRED** | `'manual'` | Assignment mode: `'manual'` (linked per product), `'sale'` (automatic when a discount is displayed), `'new'` (automatic while the product is "new"), and `'out_of_stock'` (automatic when out of stock; added when `website_sale_stock` is installed). |
 | `new_period` | `Integer` | Optional | `30` | Number of days after `publish_date` during which the `assign = 'new'` ribbon applies. Ignored by the other modes. |
 | `write_date` | `Datetime` | *System* | — | Last modification timestamp — use it for incremental sync (see [Step 6](#step-6-incremental-sync-via-write_date)). |
 
@@ -150,8 +151,9 @@ The following fields live on the product models and are the ones your catalog sy
 | `product.template` | `website_ribbon_id` | `Many2one` (`product.ribbon`) | `null` | Manual ribbon shared by **all variants** of the template. |
 | `product.product` | `variant_ribbon_id` | `Many2one` (`product.ribbon`) | `null` | Per-variant manual override; **takes precedence** over `website_ribbon_id`. |
 | `product.template` (inherited by `product.product`) | `publish_date` | `Datetime` (stored, computed) | publish moment | Reset to "now" each time the product is (re-)published; the `assign = 'new'` rule compares it with `new_period`. |
-| `product.template` | `compare_list_price` | `Monetary` | `0.0` | Struck-through comparison price; drives the `assign = 'sale'` rule on the product page. |
-| `product.template` | `is_published` | `Boolean` | `true` | Website publication flag — only published products are visible in the shop. |
+| `product.template` | `compare_list_price` | `Monetary` | `0.0` | Struck-through comparison price on `/shop` and the product page when no pricelist discount applies and *Product Price Comparison* (`website_sale.group_product_price_comparison`) is enabled; drives the `assign = 'sale'` rule. |
+| `product.template` | `is_published` | `Boolean` | `false` | Website publication flag — newly created products start unpublished (`false`); only published products are visible in the shop. |
+| `product.template` (inherited by `product.product`) | `allow_out_of_stock_order` | `Boolean` | `true` | *(Added by `website_sale_stock`)* Continue selling when out of stock. The `assign = 'out_of_stock'` ribbon only applies when this is `false` and the storable variant's `free_qty <= 0`. |
 
 ---
 
@@ -265,7 +267,7 @@ Content-Type: application/json; charset=utf-8
 
 ### Step 3: Filter Ribbons by Assignment Mode
 
-If your storefront lets merchandisers pick a **manual** ribbon for a product, list only the assignable ones (automatic ribbons cannot be attached to a product):
+Odoo does not enforce a domain on `website_ribbon_id` or `variant_ribbon_id` at the ORM level, so linking an automatic ribbon directly to a product would unconditionally pin that badge onto the product. If your CMS/back-office lets merchandisers pick a **manual** ribbon for a product, filter the picker to `assign = 'manual'` only:
 
 ```http
 POST /json/2/product.ribbon/search_read HTTP/1.1
@@ -336,11 +338,19 @@ Content-Type: application/json; charset=utf-8
     "type": "selection",
     "required": true,
     "string": "Assign",
-    "selection": [["manual", "Manually"], ["sale", "On Sale"], ["new", "When New"]],
-    "help": "Defines how this ribbon is assigned to products:\n- Manually: You assign the ribbon manually to products.\n- Sale: Applied when the product is visibly on sale.\n- New: Applied based on the New period you will define.\n"
+    "selection": [
+      ["manual", "Manually"],
+      ["sale", "On Sale"],
+      ["new", "When New"],
+      ["out_of_stock", "when out of stock"]
+    ],
+    "help": "Defines how this ribbon is assigned to products:\n- Manually: You assign the ribbon manually to products.\n- Sale: Applied when the product is visibly on sale.\n- New: Applied based on the New period you will define.\n- Out Of Stock: Applied when the product is out of stock."
   }
 }
 ```
+
+> [!NOTE]
+> The `["out_of_stock", "when out of stock"]` option is injected by `website_sale_stock` (auto-installed whenever both `website_sale` and `stock` are installed). On a database without `stock`, `selection` contains only `manual`, `sale`, and `new`.
 
 ### Step 5: Fetch Translated Ribbon Labels
 
@@ -545,7 +555,7 @@ true
 
 ### 5.4 Assign the Ribbon While Creating the Product
 
-Because it is a `Many2one`, you pass the **integer ID directly** (unlike `Many2many`, which needs command tuples):
+Because it is a `Many2one`, you pass the **integer ID directly** (unlike `Many2many`, which needs command tuples). Remember to pass `"is_published": true` if the product should be immediately visible on the storefront (new products default to `is_published: false`):
 
 ```http
 POST /json/2/product.template/create HTTP/1.1
@@ -562,6 +572,7 @@ Content-Type: application/json; charset=utf-8
       "categ_id": 1,
       "list_price": 29.99,
       "sale_ok": true,
+      "is_published": true,
       "website_ribbon_id": 3
     }
   ]
@@ -695,10 +706,13 @@ The colors are applied inline: `background-color: {bg_color}; color: {text_color
 Fetch the ribbon list once ([Step 1](#step-1-list-all-ribbons)), fetch the product payload once ([Step 7](#step-7-fetch-the-ribbon-attached-to-each-product)), then apply Odoo's precedence yourself:
 
 ```python
+from datetime import datetime, timezone
+
 def effective_ribbon(product, pricing, ribbons, ribbons_by_id):
     """product: dict from product.product/search_read ("variant_ribbon_id",
-       "product_tmpl_id", "publish_date", "compare_list_price") merged with the
-       parent template's "website_ribbon_id".
+       "product_tmpl_id", "publish_date", "compare_list_price", "is_storable",
+       "free_qty", "allow_out_of_stock_order") merged with the parent template's
+       "website_ribbon_id".
        pricing: {"base_price": ..., "price": ...} produced by your pricing layer
        ribbons: list from product.ribbon/search_read, ordered by sequence, id."""
     # (1) manual ribbon wins: variant first, then template
@@ -712,19 +726,32 @@ def effective_ribbon(product, pricing, ribbons, ribbons_by_id):
             return ribbon
         if ribbon["assign"] == "new" and days_since(product["publish_date"]) <= ribbon["new_period"]:
             return ribbon
+        if ribbon["assign"] == "out_of_stock" and is_out_of_stock(product):
+            return ribbon
     return None
 
 def is_discounted(product, pricing):
-    # comparison price entered in the backend (product page)
-    if product["compare_list_price"] > pricing["price"]:
+    # pricelist lowered the catalog price
+    if pricing["base_price"] > pricing["price"]:
         return True
-    # pricelist lowered the catalog price (shop grid)
-    return pricing["base_price"] > pricing["price"]
+    # comparison price entered in the backend (applies on /shop and product page
+    # when no pricelist discount applies and Price Comparison is enabled)
+    return product["compare_list_price"] > pricing["price"]
+
+def is_out_of_stock(product):
+    return (
+        product.get("is_storable")
+        and not product.get("allow_out_of_stock_order", True)
+        and product.get("free_qty", 0.0) <= 0
+        and not product.get("rent_ok", False)
+    )
 
 def days_since(publish_date):
-    # publish_date is a UTC "YYYY-MM-DD HH:MM:SS" string
+    # publish_date is a UTC "YYYY-MM-DD HH:MM:SS" string;
+    # Odoo compares against fields.Datetime.today() (UTC 00:00:00 of the current day)
     published = datetime.strptime(publish_date, "%Y-%m-%d %H:%M:%S")
-    return (datetime.utcnow() - published).days
+    today_utc = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
+    return (today_utc - published).days
 ```
 
 > [!NOTE]
@@ -777,11 +804,11 @@ Content-Type: application/json; charset=utf-8
 
 ### 8.2 Calling a Private Method (`403 Forbidden`)
 
-Only public methods can be called remotely; `_get_ribbon`, `_is_applicable_for` and `_get_css_classes` are rejected:
+Only public methods can be called remotely; `product.template._get_ribbon`, `product.ribbon._is_applicable_for` and `product.ribbon._get_css_classes` are rejected:
 
 #### Request
 ```http
-POST /json/2/product.ribbon/_get_ribbon HTTP/1.1
+POST /json/2/product.template/_get_ribbon HTTP/1.1
 Host: mycompany.odoo.com
 Authorization: bearer <API_KEY>
 Content-Type: application/json; charset=utf-8
@@ -795,10 +822,10 @@ Content-Type: application/json; charset=utf-8
 ```json
 {
   "name": "odoo.exceptions.AccessError",
-  "message": "Private methods (such as 'product.ribbon._get_ribbon') cannot be called remotely.",
-  "arguments": ["Private methods (such as 'product.ribbon._get_ribbon') cannot be called remotely."],
+  "message": "Private methods (such as 'product.template._get_ribbon') cannot be called remotely.",
+  "arguments": ["Private methods (such as 'product.template._get_ribbon') cannot be called remotely."],
   "context": {},
-  "debug": "Traceback (most recent call last):\n  File \"/opt/odoo/addons/rpc/controllers/json2.py\", line 66, in web_json_2_rpc\n    func = get_public_method(Model, __method__)\nodoo.exceptions.AccessError: Private methods (such as 'product.ribbon._get_ribbon') cannot be called remotely.\n"
+  "debug": "Traceback (most recent call last):\n  File \"/opt/odoo/addons/rpc/controllers/json2.py\", line 66, in web_json_2_rpc\n    func = get_public_method(Model, __method__)\nodoo.exceptions.AccessError: Private methods (such as 'product.template._get_ribbon') cannot be called remotely.\n"
 }
 ```
 
@@ -892,16 +919,16 @@ Named parameters must match the method signature — e.g. sending `domain` to `r
 The table holds a handful of records that change on a merchandising schedule, not on every order. Fetch it once at boot (or once per hour) and refresh it with the `write_date` filter of [Step 6](#step-6-incremental-sync-via-write_date). Never call `product.ribbon/search_read` inside a product-card render loop.
 
 ### 2. Reproduce Odoo's Precedence Exactly
-Manual (`variant_ribbon_id` → `website_ribbon_id`) before automatic (`assign = 'sale'`, `'new'`, ordered by `sequence`), and never expose a ribbon that Odoo would not show — otherwise the same product will be flagged differently in the backend preview and on your storefront.
+Manual (`variant_ribbon_id` → `website_ribbon_id`) before automatic (`assign = 'sale'`, `'new'`, `'out_of_stock'`, ordered by `sequence`), and never expose a ribbon that Odoo would not show — otherwise the same product will be flagged differently in the backend preview and on your storefront.
 
 ### 3. Reference Ribbons by ID, Never by Name
 `name` is translatable (and capped at 20 characters), so it is **not** a stable key. Store `id` in your CMS/mapping tables and resolve the label through the translated list.
 
-### 4. Recount Automatic Ribbons on Every Price Refresh
-`On Sale` depends on the price actually displayed and `When New` on `publish_date` + `new_period`. A ribbon can appear or disappear with **no change on the ribbon record**, so recompute during your scheduled catalog/flags job.
+### 4. Recount Automatic Ribbons on Every Price or Stock Refresh
+`On Sale` depends on the price actually displayed, `When New` on `publish_date` + `new_period`, and `when out of stock` on `free_qty` + `allow_out_of_stock_order`. A ribbon can appear or disappear with **no change on the ribbon record**, so recompute during your scheduled catalog/flags job.
 
 ### 5. Seed Automatic Ribbons Idempotently
-Because a second `assign = 'sale'` / `'new'` record is rejected (`422`), always `search_read` by `assign` first and then `create` (missing) or `write` (existing). Never blind-`create` during a deployment.
+Because a second `assign = 'sale'` / `'new'` / `'out_of_stock'` record is rejected (`422`), always `search_read` by `assign` first and then `create` (missing) or `write` (existing). Never blind-`create` during a deployment.
 
 ### 6. Give the Sync User the Right Groups
 Split responsibilities: a **read-only** integration key suffices for storefront rendering; ribbon *management* (create/update/delete) needs a **Sales Manager** key. Keep the manager key out of the storefront runtime.
@@ -913,13 +940,13 @@ Split responsibilities: a **read-only** integration key suffices for storefront 
 A ribbon is decorative but conveys information ("On Sale"). Expose the label as text (not only as an image/background) with sufficient contrast, and honour the localized `name` so screen readers announce the correct word.
 
 ### 9. Verify the Schema Before Relying on Selections
-Run `product.ribbon/fields_get` (see [Step 4](#step-4-discover-selection-values-dynamically-fields_get)) in your integration tests: `style` (`ribbon` / `tag`), `position` (`left` / `right`) and `assign` (`manual` / `sale` / `new`) are the keys your frontend maps to CSS.
+Run `product.ribbon/fields_get` (see [Step 4](#step-4-discover-selection-values-dynamically-fields_get)) in your integration tests: `style` (`ribbon` / `tag`), `position` (`left` / `right`) and `assign` (`manual` / `sale` / `new` / `out_of_stock`) are the keys your frontend maps to CSS and automatic badge rules.
 
 ---
 
 ## Related Guides
 
-- [inventory.md](inventory.md) — `product.template` / `product.product` field reference (including `website_ribbon_id`).
+- [inventory.md](inventory.md) — `product.template` / `product.product` field reference (including `website_ribbon_id` and `variant_ribbon_id`).
 - [categories.md](categories.md) — eCommerce categories used for shop navigation.
 - [pricelists.md](pricelists.md) — computing the price that drives the automatic `On Sale` ribbon.
 - [authentication.md](authentication.md) — generating and using API keys with the JSON-2 API.
