@@ -117,6 +117,8 @@ The base product definition. A template can represent a single standalone produc
 | `taxes_id` | `Many2many` (`account.tax`) | Optional | Default Sale Tax | Customer sales tax IDs (e.g., `[[6, 0, [tax_id]]]`). |
 | `tracking` | `Selection` | Optional | `'none'` | Traceability mode: `'none'`, `'serial'` (Unique Serial No. per unit), `'lot'` (Batch / Lot No.). |
 | `active` | `Boolean` | Optional | `true` | Active status. Set to `false` to archive discontinued products. |
+| `x_studio_selection_field_11i_1k7g2v938` | `Selection` | Optional | `false` | **Custom Studio Field:** Fabric material of the product (e.g., `'cotton'`, `'polyester'`, etc.). Query valid keys via `fields_get`. |
+| `x_studio_size_chart_image` | `Binary` | Optional | `null` | **Custom Studio Field:** Base64-encoded size chart image for the product. |
 
 > [!IMPORTANT]
 > **`free_qty`, `incoming_qty`, and `outgoing_qty` exist only on `product.product` (variants), not on `product.template`.** While `product.template` aggregates `qty_available` and `virtual_available`, always query `product.product` when checking real-time unreserved stock (`free_qty`).
@@ -142,6 +144,8 @@ The specific sellable SKU (e.g. Size M, Color Black). If a product template has 
 | `virtual_available` | `Float` | *Computed* | `0.0` | Forecasted quantity including incoming/outgoing moves. |
 | `incoming_qty` | `Float` | *Computed* | `0.0` | Incoming units on open receipts/POs. |
 | `outgoing_qty` | `Float` | *Computed* | `0.0` | Outgoing units reserved on confirmed sales orders. |
+| `x_studio_selection_field_11i_1k7g2v938` | `Selection` | Optional | Template Value | **Custom Studio Field:** Fabric material inherited from `product.template` via delegation (e.g., `'cotton'`, `'polyester'`). |
+| `x_studio_size_chart_image` | `Binary` | Optional | Template Value | **Custom Studio Field:** Size chart image inherited from `product.template` via delegation (Base64 string). |
 
 ---
 
@@ -298,7 +302,7 @@ Content-Type: application/json; charset=utf-8
 ### Step 2: Catalog Sync: Products, Variants & Multiple Images Gallery
 
 #### 2.1 Create a Storable Product Template with Primary Image
-Create the parent product record and assign its main hero image directly via base64 encoded binary string in `image_1920`:
+Create the parent product record and assign its main hero image directly via base64 encoded binary string in `image_1920` (as well as optional custom Studio fields like fabric selection `x_studio_selection_field_11i_1k7g2v938` and size chart image `x_studio_size_chart_image`):
 
 ```http
 POST /json/2/product.template/create HTTP/1.1
@@ -318,6 +322,8 @@ Content-Type: application/json; charset=utf-8
       "default_code": "SKU-MOUSE-SLIM-01",
       "barcode": "079357318921",
       "image_1920": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+      "x_studio_selection_field_11i_1k7g2v938": "cotton",
+      "x_studio_size_chart_image": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
       "weight": 0.12,
       "sale_ok": true,
       "purchase_ok": true,
@@ -332,6 +338,33 @@ Content-Type: application/json; charset=utf-8
 [620]
 ```
 *(Returns newly created product template ID `620`)*
+
+> [!TIP]
+> **Discovering Studio Selection Keys & Rendering Size Chart Images:**
+> - **Valid fabric keys (`x_studio_selection_field_11i_1k7g2v938`):** Odoo Studio `Selection` fields require exact technical keys (not display labels). Query valid `[key, label]` pairs dynamically before syncing:
+>   ```http
+>   POST /json/2/product.template/fields_get HTTP/1.1
+>   Host: mycompany.odoo.com
+>   Authorization: bearer <API_KEY>
+>   Content-Type: application/json; charset=utf-8
+>
+>   {
+>     "allfields": ["x_studio_selection_field_11i_1k7g2v938"],
+>     "attributes": ["type", "string", "selection"]
+>   }
+>   ```
+>   Example response snippet:
+>   ```json
+>   {
+>     "x_studio_selection_field_11i_1k7g2v938": {
+>       "type": "selection",
+>       "string": "Fabric",
+>       "selection": [["cotton", "Cotton"], ["polyester", "Polyester"]]
+>     }
+>   }
+>   ```
+> - **Size chart image URL (`x_studio_size_chart_image`):** Fetch or embed the uploaded size chart image directly via Odoo's web image route instead of pulling Base64 data in catalog listings:
+>   `https://mycompany.odoo.com/web/image/product.template/620/x_studio_size_chart_image`
 
 ---
 
@@ -585,7 +618,7 @@ Content-Type: application/json; charset=utf-8
   "domain": [
     ["product_tmpl_id", "=", 620]
   ],
-  "fields": ["id", "default_code", "name", "qty_available", "free_qty"],
+  "fields": ["id", "default_code", "name", "x_studio_selection_field_11i_1k7g2v938", "qty_available", "free_qty"],
   "limit": 1
 }
 ```
@@ -597,6 +630,7 @@ Content-Type: application/json; charset=utf-8
     "id": 1055,
     "default_code": "SKU-MOUSE-SLIM-01",
     "name": "Ultra-Slim Wireless Mouse",
+    "x_studio_selection_field_11i_1k7g2v938": "cotton",
     "qty_available": 0.0,
     "free_qty": 0.0
   }
@@ -1017,6 +1051,7 @@ Content-Type: application/json; charset=utf-8
     "barcode",
     "name",
     "lst_price",
+    "x_studio_selection_field_11i_1k7g2v938",
     "free_qty",
     "qty_available"
   ],
@@ -1035,6 +1070,7 @@ Content-Type: application/json; charset=utf-8
     "barcode": "012345678901",
     "name": "Wireless Noise Cancelling Headphones",
     "lst_price": 299.99,
+    "x_studio_selection_field_11i_1k7g2v938": false,
     "free_qty": 14.0,
     "qty_available": 20.0
   },
@@ -1044,6 +1080,7 @@ Content-Type: application/json; charset=utf-8
     "barcode": "079357318921",
     "name": "Ultra-Slim Wireless Mouse",
     "lst_price": 49.99,
+    "x_studio_selection_field_11i_1k7g2v938": "cotton",
     "free_qty": 150.0,
     "qty_available": 150.0
   }
@@ -1166,9 +1203,10 @@ If your e-commerce store fulfills orders from multiple regional warehouses (e.g.
 - Pass `"context": {"warehouse": warehouse_id}` when reading `free_qty` to get accurate regional stock for geo-routed order allocation.
 
 ### 6. High-Performance Product Image Handling & CDN Caching
-- **Avoid Base64 in Search Payloads:** Never request `image_1920` or other binary fields in catalog listing search queries. Exclude binary fields from `fields` to prevent megabytes of base64 transfer over HTTP.
+- **Avoid Base64 in Search Payloads:** Never request `image_1920`, `x_studio_size_chart_image`, or other binary fields in catalog listing search queries. Exclude binary fields from `fields` to prevent megabytes of base64 transfer over HTTP.
 - **Direct Cacheable Image URLs:** Construct direct image URLs for storefront display:
   - Product Template Primary: `https://mycompany.odoo.com/web/image/product.template/<template_id>/image_512`
+  - Product Size Chart (Studio Image): `https://mycompany.odoo.com/web/image/product.template/<template_id>/x_studio_size_chart_image`
   - Product Variant Primary: `https://mycompany.odoo.com/web/image/product.product/<variant_id>/image_512`
   - Extra Media Gallery Image: `https://mycompany.odoo.com/web/image/product.image/<image_id>/image_1024`
 - **Cache Invalidation via `write_date`:** Append the Unix timestamp or formatted `write_date` query parameter (e.g. `?unique=1755950400`) to let CDNs and browsers aggressively cache images until modified in Odoo.
